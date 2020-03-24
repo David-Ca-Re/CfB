@@ -1,0 +1,90 @@
+%function ExcelToMIDcoreBody('ExcelFile','DoMean')
+    %ExcelToMIDcore='20190613_Results_flux_Ivan-COPY.xlsx'
+    DoMean=1;
+    T = readtable('20190613_Results_flux_Ivan-COPY.xlsx', 'Sheet',1);
+    [rowLength, colLength]=size(T);
+    LC_molecules=readtable('LC-MS_Molecules.xlsx','Sheet',1);
+    shortFormName=LC_molecules(:,1)
+     
+     
+    %To replace 'N/A' by '0'
+    T2=table2array(T);
+    [a1, b1]=size(T2);
+    Data1=T;
+    [a2, b2]=size(Data1);
+    Data2=Data1;
+    for j=1:rowLength
+        for i=1:colLength
+           Data2{j,i}=replace(Data1{j,i},'N/A','0');
+        end
+    end
+    
+
+
+experiments=Data2{:,2};
+
+% Data Arrangement
+newTable1 = Data2(not(cellfun(@isempty,regexp(experiments,'-1$'))),:);
+newTable2 = Data2(cellfun(@isempty,regexp(experiments,'-1$')),:);
+NewTable = [newTable1; newTable2(3:end,:)];
+
+%Mean/notMean
+
+expHeaders=NewTable(:,2);
+NameUnique=unique(expHeaders);
+Data=NewTable(:,5:end);
+DataArray=Data{:,:};
+
+
+%Do this if you want to do the means
+%Add conditional that enters only if needed
+%if DoMean==1:
+    Means=zeros(height(NameUnique),width(Data));
+    for replicates=1:height(NameUnique)
+        DataLineCell=table2cell(Data(ismember(expHeaders,NameUnique(replicates,1)),:));
+        for columns=1:width(Data)
+            AmountReplicates=height(expHeaders)/height(NameUnique);
+            position=find(ismember(expHeaders,NameUnique(replicates,1)))/AmountReplicates;
+            Means(position(2),columns)=mean(cellfun(@str2num ,DataLineCell(:,columns),'UniformOutput',1));
+        end
+    end
+    %ExpTitles=array2table(zeros(height(NameUnique),1));
+    pos2=1:1:height(NameUnique);
+    pos=1:AmountReplicates:height(expHeaders);
+    ExpTitles(pos2,1)=expHeaders(pos,1);   
+    MeanTable=[ExpTitles array2table(Means)];
+%end
+
+    %To clean the names of the molecules
+    moleculesUnique=unique(table2cell(Data2(1,5:colLength)));
+    moleculesInChar=char(moleculesUnique);
+    for i=1:length(moleculesUnique)
+        splitted=split(moleculesUnique{1,i},'-');
+        molUniqueModified(i,1)=lower(splitted(1));
+    end
+    
+%To extract each molecule in an txt
+excel_title=Data2{1,1:colLength};
+A=zeros(rowLength,1);
+for i=1:length(moleculesUnique)
+    molecule=strip(moleculesInChar(i,:)); 
+    
+    
+    %HEAD - Try this outside first!!
+    carbonsNumber=LC_molecules{ismember(molecule,shortFormName),3};
+    %carbonNumber=1;
+    fragment=carbonsNumber;
+    sulfurNumber=0;
+   
+    Body=table({'carbons';'fragment';'silicium';'sulfur'},[carbonsNumber;fragment;0;sulfurNumber])
+    
+    %BODY
+    %if DoMean=0:
+        %A=NewTable(:,ismember(excel_title(1,5:end),molecule));
+        %A_final=[expHeaders A];
+        
+    %if DoMean=1:
+        A=Means(:,ismember(excel_title(1,5:end),molecule));
+        %A_final=[ExpTitles A];
+    
+end
