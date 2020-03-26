@@ -71,12 +71,21 @@ for i=1:length(moleculesUnique)
     
     
     %HEAD - Try this outside first!!
-    carbonsNumber=LC_molecules{ismember(molecule,shortFormName),3};
-    %carbonNumber=1;
-    fragment=carbonsNumber;
-    sulfurNumber=0;
-   
-    Body=table({'carbons';'fragment';'silicium';'sulfur'},[carbonsNumber;fragment;0;sulfurNumber])
+    %row is the ismember+protocol in row,12
+    %for the rows with 1, another ismember with protocol
+    row=ismember(molecule,shortFormName{:,:})
+    carbonsNumber=LC_molecules{row,3};
+    fragment=LC_molecules{row,10};;
+    sulfurNumber=LC_molecules{row,5};;
+    siliciumNumber=LC_molecules{row,6};
+    mz=zeros(1,carbonsNumber+1);
+    mz(1,1)=LC_molecules{row,2};
+    for value=2:carbonsNumber+1
+         mz(1,value)=mz(1,value-1)+1;
+    end
+    
+    Head=table({'carbons';'fragment';'silicium';'sulfur'},[carbonsNumber;fragment;siliciumNumber;sulfurNumber]);
+    BodyHeader=table({'m/z'},mz);
     
     %BODY
     %if DoMean=0:
@@ -88,3 +97,15 @@ for i=1:length(moleculesUnique)
         %A_final=[ExpTitles A];
     
 end
+
+for z=1:length(ExpTitles)
+    s=split(ExpTitles{1,z},"_");
+    part1=s{1};
+    part2=s{2};
+    part3=s{3};
+    str1=part1(end)
+    str2=part2
+    str3=part3(end)
+    %Sample
+    %S02T02S71
+end    
