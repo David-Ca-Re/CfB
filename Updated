@@ -1,6 +1,6 @@
-%function ExcelToMIDcore('ExcelFile','DoMean','Protocol', 'DataFile','IonArg')
-
-    ExcelFile='20190613_Results_flux_Ivan-COPY.xlsx';
+%function ExcelToMIDcore('ExcelFile','DoMean','Protocol', 'DataFile','IonArg012')
+    ExcelFile='GC-MS_toMIDcore_format.xlsx';
+  
     Protocol='LC-MS1';
     DoMean=1;
     IonArg=1;
@@ -12,8 +12,9 @@
     shortFormName=molecules_info(:,1);
     %Vector amb les condicions
      
+    
     %To replace 'N/A' by '0'
-    T2=table2array(T);
+    T2=table2array(table(T));
     [a1, b1]=size(T2);
     Data1=T;
     [a2, b2]=size(Data1);
@@ -73,39 +74,58 @@
     end
     
     %To extract each molecule in an txt file
+    %First create a dir where the files will be added
+    %mkdir molecules_MIDcore
+    %folderPath=strcat(pwd,"/molecules_MIDcore");
+    
     excel_title=Data2{1,1:colLength};
-    A=zeros(rown,1);
-    %for i=1:length(moleculesUnique)
-    for i=1
-        molecule=strip(moleculesInChar(i,:)); 
-
+    
+    for i=1:length(moleculesUnique)
+    %for i=28
+        %This is to search in molecules_info
+        molecule=molUniqueModified{i,:};
+        %This is to search in NewTable or Means
+        molecule_A=strip(moleculesInChar(i,:)); 
 
         %HEAD 
         %row is the ismember+protocol in row,12
         %for the rows with 1, another ismember with protocol
-        row=ismember(molecule,shortFormName{:,:});
-        carbonsNumber=molecules_info{row,3};
-        fragment=molecules_info{row,10};
+        row=find(ismember(shortFormName{:,:},lower(molecule)));
+        carbonsNumber=molecules_info{row,8};
+        fragment=molecules_info{row,3};
         sulfurNumber=molecules_info{row,5};
         siliciumNumber=molecules_info{row,6};
+        Carbons=table("carbons",string(carbonsNumber));
+        Fragment=table("fragment",string(fragment));
+        Silicum=table("silicum",string(siliciumNumber));
+        Sulfur=table("sulfur",string(sulfurNumber));
+        Head=vertcat(Carbons,Fragment,Silicum,Sulfur);
+
+        
+        
         mz=zeros(1,carbonsNumber+1);
         mz(1,1)=molecules_info{row,2};
+        MZ=table(zeros(1,1));
+        MZ{1,1}=mz(1,1);
         for value=2:carbonsNumber+1
              mz(1,value)=mz(1,value-1)+1;
+             MZ{1,value}=string(mz(1,value));
         end
-
-
+        BodyHeader=table("m/z",string(MZ{:,:}));
+        
         %BODY
+        A=zeros(rown,1);
         if DoMean==0
-            A=NewTable(:,ismember(excel_title(1,5:end),molecule));
+            A=NewTable(:,ismember(excel_title(1,5:end),molecule_A));
             newExpTitles=expHeaders;
         elseif DoMean==1
-            A=Means(:,ismember(excel_title(1,5:end),molecule));
+            A=Means(:,ismember(excel_title(1,5:end),molecule_A));
             newExpTitles=ExpTitles;
-        end   
-        %A_final=[newExpTitles table(A)];
-        %This creates a string array
+        end
+        newExpTitles{end,end}=table2cell(table(strcat("final",newExpTitles{end,end})));
         A_final=[string(newExpTitles{:,:}) A];
+        %This creates a string array
+        
        
         
         
@@ -117,55 +137,85 @@
             pdf1=binopdf(x,carbonsNumber,0.01); %1% of carbon is labelled
             commer=zeros(1,1);
             commer(1)=pdf1(1)*mean(cellfun(@str2num, newTable1{:,5}));
-            for i=2:length(pdf1)
-                commer(i)=(pdf1(i)*commer(1))/pdf1(1);
+            for iii=2:length(pdf1)
+                commer(iii)=(pdf1(iii)*commer(1))/pdf1(1);
             end
             commer_vector=table(zeros(1,1));
             for ii=1:length(commer)
-                commer_vector{1,ii}=commer(ii)
+                commer_vector{1,ii}=commer(ii);
             end
-            commer_line=sprintf(['commer','\t',num2str(commer)]);
-            
+            commer_line=table("commer",string(commer_vector{:,:}));
         end
-        %cellstr(commer_line)
+  
         
+        %It has to be all negative to enter to MIDcore (CfB is positive)
+        %for future improvement, MIDcore should be changed to not only
+        %accept negative ionization
         
         %IONIZATION
-        if IonArg==1
-            %Positive
-            %Amount=
-        elseif IonArg==0
-            %Negative
+        if IonArg==0 
+            %Neutral Add a new column with zeros to the left
+            [r, c]=size(A);
+            newCol=zeros(r,1);
+            A_final=[string(newExpTitles{:,:}) newCol A];
+            %Opcio1: tot zeros
+            %Opcio2: mirar exemples i pposar ratio m-1/m0 (DIVIDIR M-1/M0 * 100
+                %NOSTRES DADES M(MAX)/M0 * 100)
+            %Opcio3: buscar valor minim que no afecti (en relació a Opció2)
+        elseif IonArg==1
+            %Positive change the BodyHeader
+            mz=mz-1;
+            MZ=string(mz);
+            BodyHeader=table("m/z",string(MZ));
+        elseif IonArg==2
+            %Negative --> Do nothing for now
+            
         end
-        
+
 
         
-        
-        %TO PRINT IN AN OUTFILE
-
-        %To print into a txt file if is all 1 table
-        molName=strcat(molecule,".txt");
-        writetable(Head,molName,'Delimiter','\t','WriteRowNames',false);
-        fclose(molName);
-        
+        %TO PRINT IN AN OUTFILE       
     
-        %THIS FIRST WORKS
+        molName=strcat(molecule,".txt");
         fileID = fopen(molName,"w");
-        [rown, coln]=size(Head)
+        [rown, ~]=size(Head);
         for row = 1:rown
             fprintf(fileID,"%s \t %s \n",string(Head{row,:}));
         end
-        fclose("all")
-        
-        %NEED TO CONVERT BODY HEADER TO A table
-        fileID = fopen(molName,"a")
-        [rown, coln]=size(BodyHeader)
+        fclose("all");
+
+        fileID = fopen(molName,"a");
+        [rown, ~]=size(BodyHeader);
         for row = 1:rown
             fprintf(fileID,"%s \t",string(BodyHeader{row,:}));
+            fprintf(fileID,"\n");
         end
-        fclose("all")
+        fclose("all");
         
-        %https://se.mathworks.com/help/matlab/import_export/write-to-delimited-data-files.html
-        %Metabolite list complete_updated_SS
-        %GC to convert MID_Xcalibur
+        fileID = fopen(molName,"a");
+        [rown, ~]=size(commer_line);
+        for row = 1:rown
+            fprintf(fileID,"%s \t",string(commer_line{row,:}));
+        end
+        fprintf(fileID,"\n");
+        fclose("all");
+        
+        fileID = fopen(molName,"a");
+        [rown, coln]=size(A_final);
+        for row = 1:rown
+            fprintf(fileID,"%s \t",string(A_final(row,:)));
+            fprintf(fileID,"\n");
+        end
+        fclose("all");
+ 
+        %destination = fullfile(folderPath,fileID);
+        %fileToMove=strcat(pwd,"/",molName);
+        %copyfile(fileToMove,folderPath)
+        
     end
+    
+    %To move all the files created (finish with.txt) to molecules_MIDcore
+    %folder
+    movefile *.txt molecules_MIDcore_TEST
+
+
