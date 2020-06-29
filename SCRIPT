@@ -70,10 +70,10 @@
         %I will call this as col(1) to get the position that first appear
         if size(R,2)>1
             %need to sum each row
-            for r=1:size(R,1)   % This does the sum, but now need to couple this with Data and have the same shape and so on
+            for r=1:size(R,1)   % This does the sum
                 D(r,col(1))=sum(R(r,1)); %num(r,ismember(N1,NamesUni(n))))
             end
-            for x=2:length(col)-1 %to keep the positions to delete them afterwards
+            for x=2:length(col) %to keep the positions to delete them afterwards
                 delete_pos(y)=col(x);
                 y=y+1;
             end
@@ -81,11 +81,13 @@
             D(:,col(1))=R;
         end
     end
+    %Here it deletes the rows that are all 0
+    N1(:,delete_pos)=[]; %This are the headers
+    D(:,delete_pos)=[]; %This is the data
     
-    %Here I should delete the rows that are all 0, and delete the titles
-    %also
     
-    %Add the sum if there is more than 1 column for the same m/z
+    
+ 
  
 
     %Commer checking and Data Arrangements, NewTable will be the new table
