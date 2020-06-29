@@ -28,34 +28,54 @@
     [num,txt,raw]=xlsread(ExcelFile);
     Names=string(txt(1,:));
     
+%     for i=5:length(Names);
+%         s=split(Names(i),'-');
+%         if regexp(Names(i),'-L');
+%             N(i)=strcat(s(1),"-",s(2));
+%         elseif regexp(Names(i),'-D');
+%             N(i)=strcat(s(1),"-",s(2));
+%         elseif regexp(Names(i),'-C');
+%             N(i)=strcat(s(1),"-",s(2));
+%         else
+%         %Add another one for -D 
+%             N(i)=s(1);
+%         end
+%     end
+    
     for i=5:length(Names);
         s=split(Names(i),'-');
         if regexp(Names(i),'-L');
-            N(i)=strcat(s(1),"-",s(2));
+            N(i)= strcat(s(1),string('-'),s(2)); % previous not working: N(i)= strcat(s(1),"-",s(2)); %
         elseif regexp(Names(i),'-D');
-            N(i)=strcat(s(1),"-",s(2));
+           N(i)= strcat(s(1),string('-'),s(2)); % previous not working: N(i)= strcat(s(1),"-",s(2));
         elseif regexp(Names(i),'-C');
-            N(i)=strcat(s(1),"-",s(2));
+           N(i)=strcat(s(1),string('-'),s(2)); % previous not working: N(i)=strcat(s(1),"-",s(2));
         else
-        %Add another one for -D 
+        %Add another one for -D
             N(i)=s(1);
         end
-    end 
-    NamesUni=unique(N);
+    end
+  
+    
+    
+    NamesUni=unique(N); %This is not in order, posa m_01, m_10, m_02 en comptes de m_01, m_02, m_10
     %ismember(N,NamesUni(1));
+    D=zeros(size(T,1),size(NamesUni,2));
     for n=1:length(NamesUni)
         
-        R=cellfun(@str2num, table2cell(T(3:end,ismember(N,NamesUni(n)))),'UniformOutput',false); %206
+        R=cellfun(@str2num, table2cell(T(3:end,ismember(N,NamesUni(n)))),'UniformOutput',false);
+        col=find(ismember(N,NamesUni(n))); %I will call this as col(1) to get the position that first appear
         if size(R,2)>1
             %need to sum each row
             for r=1:size(R,2)   % This does the sum, but now need to couple this with Data and have the same shape and so on
-                D(:,n)=sum(R(:,r));
+                D(r,col(1))=sum(cell2mat(R(r,:)));
             end
         elseif size(R,2)==1
-            D(:,n)=R(:,:);
+            D(:,col(1))=cell2mat(T{:,col(1)});
         end
     end
     
+    %Here I should delete the rows that are all 0
     %Add the sum if there is more than 1 column for the same m/z
  
 
@@ -75,21 +95,30 @@
     
     %Mean calculations if required
     
-    %CHECK IF THE FIRST PART AND THE LAST ONE ARE THE SAME
-    expHeaders=NewTable(:,2);
-    NameUnique=unique(expHeaders);
+    %CHECK IF THE FIRST PART AND THE LAST ONE ARE THE SAME, do
+    %the mean of those
+    expHeaders=table2cell(NewTable(:,2));
+    %NameUnique=unique(SampleNames); %RE-DO THIS WITH INITIAL AND BIOLOGICAL REPLICATE AND CONDITIONS
+    
+    SampleNames=zeros(size(expHeaders,1),(size(expHeaders,2)));
+    for iii=1:size(expHeaders,1)
+        BioName=extractBefore(string(expHeaders{iii,1}),4);
+        Condition=extractAfter(string(expHeaders{iii,1}),6);
+        SampleNames(iii,1)=strcat(BioName+"\w\w\w"+Condition);
+    end
+    NameUnique=unique(SampleNames);
+    
+    
     Data=NewTable(:,5:end);
     DataArray=Data{:,:};
     if DoMean==1
-        Means=zeros(height(NameUnique),width(Data));
-        for replicates=1:height(NameUnique)
-            BioName=extractBefore(string(expHeaders{1,1}),4);
-            Condition=extractAfter(string(expHeaders{1,1}),6);
-            regexp(experiments,strcat(BioName+"\w\w\w"+Condition));
+        Means=zeros(size(NameUnique,1),width(Data));
+        for replicates=1:size(NameUnique,1)
             
-            DataLineCell=table2cell(Data(ismember(expHeaders,NameUnique(replicates,1)),:));
+            %DataLineCell=table2cell(Data(ismember(expHeaders,NameUnique(replicates,1)),:));
+            DataLineCell=table2cell(Data(regexp(expHeaders,NameUnique(replicates,1)),:));
             for columns=1:width(Data)
-                AmountReplicates=height(expHeaders)/height(NameUnique);
+                AmountReplicates=height(expHeaders)/size(NameUnique,1);
                 position=find(ismember(expHeaders,NameUnique(replicates,1)))/AmountReplicates;
                 Means(position(2),columns)=mean(cellfun(@str2num ,DataLineCell(:,columns),'UniformOutput',1));
             end
