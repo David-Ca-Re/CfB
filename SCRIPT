@@ -1,7 +1,7 @@
 %function ExcelToMIDcore('ExcelFile','DoMean','Protocol', 'DataFile','IonArg012')
-    
-    ExcelFile='20190613_Results_flux_Ivan-COPY.xlsx';
-    Protocol='LC-MS1';
+    ExcelFile='ExcelToMIDcore.xlsx'
+    %ExcelFile='20190613_Results_flux_Ivan-COPY.xlsx';
+    Protocol='LC-MS1'; 
     DoMean=1;
     IonArg=1;
     DataFile='ExcelToMIDcore-RawDataInfo.xlsx';
@@ -10,27 +10,7 @@
     [rown, colLength]=size(T);
     molecules_info=readtable(DataFile,'Sheet',1);
     shortFormName=molecules_info(:,1);
-    %Vector amb les condicions
-    
-    [num,txt,raw]=xlsread(ExcelFile);
-    Names=string(txt(1,:));
-    
-    for i=5:length(Names);
-        s=split(Names(i),'-');
-        if regexp(Names(i),'-L');
-            N(i)=strcat(s(1),"-",s(2));
-        else
-            N(i)=s(1);
-        end
-    end 
-    NamesUni=unique(N);
-    ismember(N,NamesUni(1));
-    %for i...
-    R=cellfun(@str2num, table2cell(T(3:end,ismember(N,NamesUni(206)))))
-    %need to sum each row
-    for r=1:length(R)   % This does the sum, but now need to couple this with Data and have the same shape and so on
-        D(r,1)=sum(R(r,:))
-    end
+
     
     
     %To replace 'N/A' by '0'
@@ -45,6 +25,37 @@
         end
     end
     
+    [num,txt,raw]=xlsread(ExcelFile);
+    Names=string(txt(1,:));
+    
+    for i=5:length(Names);
+        s=split(Names(i),'-');
+        if regexp(Names(i),'-L');
+            N(i)=strcat(s(1),"-",s(2));
+        elseif regexp(Names(i),'-D');
+            N(i)=strcat(s(1),"-",s(2));
+        elseif regexp(Names(i),'-C');
+            N(i)=strcat(s(1),"-",s(2));
+        else
+        %Add another one for -D 
+            N(i)=s(1);
+        end
+    end 
+    NamesUni=unique(N);
+    %ismember(N,NamesUni(1));
+    for n=1:length(NamesUni)
+        
+        R=cellfun(@str2num, table2cell(T(3:end,ismember(N,NamesUni(n)))),'UniformOutput',false); %206
+        if size(R,2)>1
+            %need to sum each row
+            for r=1:size(R,2)   % This does the sum, but now need to couple this with Data and have the same shape and so on
+                D(:,n)=sum(R(:,r));
+            end
+        elseif size(R,2)==1
+            D(:,n)=R(:,:);
+        end
+    end
+    
     %Add the sum if there is more than 1 column for the same m/z
  
 
@@ -52,10 +63,10 @@
     %with the correct data to work with
     
     experiments=Data2{:,2};
-    %This will extract the commercial line
-    commercial=Data2(not(cellfun(@isempty,regexp(experiments,'$commer'))),:);
-    newTable1 = Data2(not(cellfun(@isempty,regexp(experiments,'-1$'))),:);
-    newTable2 = Data2(cellfun(@isempty,regexp(experiments,'-1$')),:);
+    %This will extract the commercial line (commer --> COLD)
+    commercial=Data2(not(cellfun(@isempty,regexp(experiments,'$Cold'))),:);
+    newTable1 = Data2(not(cellfun(@isempty,regexp(experiments,'$S01'))),:);
+    newTable2 = Data2(cellfun(@isempty,regexp(experiments,'$S01')),:);
     if isempty(commercial)==1
         NewTable = [newTable1; newTable2(3:end,:)];
     elseif isempty(commercial)==0
@@ -63,6 +74,8 @@
     end
     
     %Mean calculations if required
+    
+    %CHECK IF THE FIRST PART AND THE LAST ONE ARE THE SAME
     expHeaders=NewTable(:,2);
     NameUnique=unique(expHeaders);
     Data=NewTable(:,5:end);
@@ -70,6 +83,10 @@
     if DoMean==1
         Means=zeros(height(NameUnique),width(Data));
         for replicates=1:height(NameUnique)
+            BioName=extractBefore(string(expHeaders{1,1}),4);
+            Condition=extractAfter(string(expHeaders{1,1}),6);
+            regexp(experiments,strcat(BioName+"\w\w\w"+Condition));
+            
             DataLineCell=table2cell(Data(ismember(expHeaders,NameUnique(replicates,1)),:));
             for columns=1:width(Data)
                 AmountReplicates=height(expHeaders)/height(NameUnique);
@@ -141,7 +158,8 @@
             A=Means(:,ismember(excel_title(1,5:end),molecule_A));
             newExpTitles=ExpTitles;
         end
-        newExpTitles{end,end}=table2cell(table(strcat("final",newExpTitles{end,end})));
+        %newExpTitles{end,end}=table2cell(table(strcat("final",newExpTitles{end,end})));
+        %not needed anymore
         A_final=[string(newExpTitles{:,:}) A];
         %This creates a string array
         
@@ -240,14 +258,18 @@
 
 %Run R script
 
-Rpath = 'C:\Program Files\R\R-3.1.1\bin';
-RscriptFileName = 'D:\test\lmm.R';
-RunRcode(RscriptFileName, Rpath);
-or just >> RunRcode(RscriptFileName);
+% Rpath = 'C:\Program Files\R\R-3.1.1\bin';
+% RscriptFileName = 'D:\test\lmm.R';
+% RunRcode(RscriptFileName, Rpath);
+
+%!Rscript your_script.r
+%!C:\Program Files\R\R-2.14.1\bin\Rscript R-MIDcore.R
+%path to R
+!/Users/s182286/opt/anaconda3/Applications/RStudio.app R-MIDcore.R
+%or just >> RunRcode(RscriptFileName)
 
 %mkdir....
 %movefile *_c output_MIDcore
-
 
 
 
