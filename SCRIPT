@@ -42,7 +42,7 @@
 %         end
 %     end
     
-    for i=5:length(Names);
+    for i=5:length(Names)
         s=split(Names(i),'-');
         if regexp(Names(i),'-L');
             N(i)= strcat(s(1),string('-'),s(2)); % previous not working: N(i)= strcat(s(1),"-",s(2)); %
@@ -60,33 +60,45 @@
     
     NamesUni=unique(N); %This is not in order, posa m_01, m_10, m_02 en comptes de m_01, m_02, m_10
     %ismember(N,NamesUni(1));
-    D=zeros(size(T,1),size(NamesUni,2));
+    D=zeros(size(num,1),size(num,2));
+    N1=N(:,5:end);
+    y=1;
     for n=1:length(NamesUni)
-        
-        R=cellfun(@str2num, table2cell(T(3:end,ismember(N,NamesUni(n)))),'UniformOutput',false);
-        col=find(ismember(N,NamesUni(n))); %I will call this as col(1) to get the position that first appear
+        R=num(:,ismember(N1,NamesUni(n)));
+        col=find(ismember(N1,NamesUni(n)));
+     
+        %I will call this as col(1) to get the position that first appear
         if size(R,2)>1
             %need to sum each row
-            for r=1:size(R,2)   % This does the sum, but now need to couple this with Data and have the same shape and so on
-                D(r,col(1))=sum(cell2mat(R(r,:)));
+            for r=1:size(R,1)   % This does the sum, but now need to couple this with Data and have the same shape and so on
+                D(r,col(1))=sum(R(r,1)); %num(r,ismember(N1,NamesUni(n))))
+            end
+            for x=2:length(col)-1 %to keep the positions to delete them afterwards
+                delete_pos(y)=col(x);
+                y=y+1;
             end
         elseif size(R,2)==1
-            D(:,col(1))=cell2mat(T{:,col(1)});
+            D(:,col(1))=R;
         end
     end
     
-    %Here I should delete the rows that are all 0
+    %Here I should delete the rows that are all 0, and delete the titles
+    %also
+    
     %Add the sum if there is more than 1 column for the same m/z
  
 
     %Commer checking and Data Arrangements, NewTable will be the new table
     %with the correct data to work with
     
+    
+    %THE DATA NEEDS TO BE THE ONE JUST BUILT
+    
     experiments=Data2{:,2};
     %This will extract the commercial line (commer --> COLD)
-    commercial=Data2(not(cellfun(@isempty,regexp(experiments,'$Cold'))),:);
-    newTable1 = Data2(not(cellfun(@isempty,regexp(experiments,'$S01'))),:);
-    newTable2 = Data2(cellfun(@isempty,regexp(experiments,'$S01')),:);
+    commercial=Data2(not(cellfun(@isempty,regexp(experiments,'Cold'))),:);
+    newTable1 = Data2(not(cellfun(@isempty,regexp(experiments,'S01'))),:);
+    newTable2 = Data2(cellfun(@isempty,regexp(experiments,'S01')),:);
     if isempty(commercial)==1
         NewTable = [newTable1; newTable2(3:end,:)];
     elseif isempty(commercial)==0
