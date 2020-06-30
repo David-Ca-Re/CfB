@@ -1,8 +1,9 @@
 %function ExcelToMIDcore('ExcelFile','DoMean','Protocol', 'DataFile','IonArg012')
     %ExcelFile='ExcelToMIDcore.xlsx';
     ExcelFile='20190613_Results_flux_Ivan-COPY_1.xlsx';
-    Protocol='LC-MS1'; ExcelFile='20190613_Results_flux_Ivan-COPY_1.xlsx';
     Protocol='LC-MS1'; 
+    %ExcelFile='20190613_Results_flux_Ivan-COPY_1.xlsx';
+    %Protocol='LC-MS1'; 
     DoMean=1;
     IonArg=1;
     DataFile='ExcelToMIDcore-RawDataInfo.xlsx';
@@ -74,8 +75,9 @@
     NewTable = [commercial; newTable1; newTable2];
     Exp=experiments(3:end);
     H1=Exp(find(not(cellfun(@isempty,regexp(experiments(3:end),'T01')))),:);
-    H2=Exp(find(cellfun(@isempty,regexp(experiments(3:end),'T01'))),:);
-    H2=Exp(find(logical(newTable2 - commercial)),:);
+    H2=cellfun(@isempty,regexp(experiments(3:end),'T01'));
+    comm=not(cellfun(@isempty,regexp(experiments(3:end),'Cold')));
+    H2=Exp(find(logical(H2 - comm)),:);
     
     %Mean calculations if required
     
@@ -104,8 +106,14 @@
             Means(add,:)=mean(D(ismember(expHeaders,strcat(BioNameUnique,Condition(l))),:));
             add=add+1;
         end
+        
+        for cond=1:length(ConditionUnique)
+            for expn:1:length(BioNameUnique)
+                
+                
+                
         expHeaders=strcat("S01",position);
-        MeanTable=[expHeaders Means]
+        MeanTable=[expHeaders Means];
     end
         
         
