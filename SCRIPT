@@ -71,13 +71,16 @@
     newTable1 = D(find(not(cellfun(@isempty,regexp(experiments(3:end),'T01')))),:);
     newTable2 = cellfun(@isempty,regexp(experiments(3:end),'T01'));
     newTable2 = D(find(logical(newTable2 - commercial)),:);
+    
     commercial=D(find(commercial));   
     NewTable = [commercial; newTable1; newTable2];
     Exp=experiments(3:end);
     H1=Exp(find(not(cellfun(@isempty,regexp(experiments(3:end),'T01')))),:);
+    H1=replace(H1,'T01','natural');
     H2=cellfun(@isempty,regexp(experiments(3:end),'T01'));
     comm=not(cellfun(@isempty,regexp(experiments(3:end),'Cold')));
     H2=Exp(find(logical(H2 - comm)),:);
+    
     
     comm=Exp(find(comm));
     
@@ -332,7 +335,7 @@
 %!Rscript your_script.r
 %!C:\Program Files\R\R-2.14.1\bin\Rscript R-MIDcore.R
 %path to R
-%!/Users/s182286/opt/anaconda3/Applications/RStudio.app R-MIDcore.R
+!/Users/s182286/opt/anaconda3/Applications/RStudio.app R-MIDcore.R
 %or just >> RunRcode(RscriptFileName)
 
 %mkdir....
