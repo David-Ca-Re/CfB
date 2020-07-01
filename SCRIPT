@@ -167,15 +167,15 @@
     %folderPath=strcat(pwd,"/molecules_MIDcore");
     
     excel_title=Data2{1,1:colLength};
-    splitN1
-    N
-    for name=1:size(N1,1)
-        sp=split(N1(name),"_");
-%         if regexp(sp(1),"-")
-%             sp=split(sp(1),"-");
-%         end
-        N1_1(1,name)=sp(1);
-    end
+%     splitN1
+%     N
+%     for name=1:size(N1,1)
+%         sp=split(N1(name),"_");
+% %         if regexp(sp(1),"-")
+% %             sp=split(sp(1),"-");
+% %         end
+%         N1_1(1,name)=sp(1);
+%     end
     
     for i=1:length(moleculesUnique)
     %for i=28
@@ -214,10 +214,10 @@
         %BODY
         A=zeros(rown,1);
         if DoMean==0
-            A=NewTable(:,not(cellfun(@isempty, regexp(N1,molecule_A))));
+            A=NewTable(:,not(cellfun(@isempty, regexp(NamesUni,molecule_A))));
             newExpTitles=expHeaders;
         elseif DoMean==1
-            A=Means(:,not(cellfun(@isempty, regexp(N1,molecule_A)))); %check that the values are correct!
+            A=Means(:,not(cellfun(@isempty, regexp(NamesUni,molecule_A)))); %check that the values are correct!
             newExpTitles=expHeaders;
         end
         %newExpTitles{end,end}=table2cell(table(strcat("final",newExpTitles{end,end})));
