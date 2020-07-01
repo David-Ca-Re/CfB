@@ -211,10 +211,10 @@
         fragment=molecules_info{row,3};
         sulfurNumber=molecules_info{row,5};
         siliciumNumber=molecules_info{row,6};
-        Carbons=table("carbons",string(carbonsNumber));
-        Fragment=table("fragment",string(fragment));
-        Silicum=table("silicum",string(siliciumNumber));
-        Sulfur=table("sulfur",string(sulfurNumber));
+        Carbons=table(string('carbons'),string(carbonsNumber));
+        Fragment=table(string('fragment'),string(fragment));
+        Silicum=table(string('silicum'),string(siliciumNumber));
+        Sulfur=table(string('sulfur'),string(sulfurNumber));
         Head=vertcat(Carbons,Fragment,Silicum,Sulfur);
 
         
@@ -227,7 +227,7 @@
              mz(1,value)=mz(1,value-1)+1;
              MZ{1,value}=string(mz(1,value));
         end
-        BodyHeader=table("m/z",string(MZ{:,:}));
+        BodyHeader=table(string('m/z'),string(MZ{:,:}));
         
         %BODY
         A=zeros(rown,1);
@@ -262,7 +262,7 @@
             for ii=1:length(commer)
                 commer_vector{1,ii}=commer(ii);
             end
-            commer_line=table("commer",string(commer_vector{:,:}));
+            commer_line=table(string('commer'),string(commer_vector{:,:}));
         end
   
         
@@ -288,7 +288,7 @@
             %Positive change the BodyHeader
             mz=mz-1;
             MZ=string(mz);
-            BodyHeader=table("m/z",string(MZ));
+            BodyHeader=table(string('m/z'),string(MZ));
         elseif IonArg==2
             %Negative --> Do nothing for now
             
@@ -298,37 +298,37 @@
         
         %TO PRINT IN AN OUTFILE       
     
-        molName=strcat(molecule,".txt");
-        fileID = fopen(molName,"w");
+        molName=strcat(molecule,string('.txt');
+        fileID = fopen(molName,string('w'));
         [rown, ~]=size(Head);
         for row = 1:rown
-            fprintf(fileID,"%s \t %s \n",string(Head{row,:}));
+            fprintf(fileID,string('%s \t %s \n'),string(Head{row,:}));
         end
-        fclose("all");
+        fclose(string('all'));
 
-        fileID = fopen(molName,"a");
+        fileID = fopen(molName,string('a'));
         [rown, ~]=size(BodyHeader);
         for row = 1:rown
-            fprintf(fileID,"%s \t",string(BodyHeader{row,:}));
-            fprintf(fileID,"\n");
+            fprintf(fileID,string('%s \t'),string(BodyHeader{row,:}));
+            fprintf(fileID,string('\n'));
         end
-        fclose("all");
+        fclose(string('all'));
         
-        fileID = fopen(molName,"a");
+        fileID = fopen(molName,string('a'));
         [rown, ~]=size(commer_line);
         for row = 1:rown
-            fprintf(fileID,"%s \t",string(commer_line{row,:}));
+            fprintf(fileID,string('%s \t'),string(commer_line{row,:}));
         end
-        fprintf(fileID,"\n");
-        fclose("all");
+        fprintf(fileID,string('\n'));
+        fclose(string('all'));
         
-        fileID = fopen(molName,"a");
+        fileID = fopen(molName,string('a'));
         [rown, coln]=size(A_final);
         for row = 1:rown
-            fprintf(fileID,"%s \t",string(A_final(row,:)));
-            fprintf(fileID,"\n");
+            fprintf(fileID,string('%s \t'),string(A_final(row,:)));
+            fprintf(fileID,string('\n'));
         end
-        fclose("all");
+        fclose(string('all'));
  
         %destination = fullfile(folderPath,fileID);
         %fileToMove=strcat(pwd,"/",molName);
@@ -350,7 +350,7 @@
 %!Rscript your_script.r
 %!C:\Program Files\R\R-2.14.1\bin\Rscript R-MIDcore.R
 %path to R
-%!/Users/s182286/opt/anaconda3/Applications/RStudio.app R-MIDcore.R
+!/Users/s182286/opt/anaconda3/Applications/RStudio.app R-MIDcore.R
 %or just >> RunRcode(RscriptFileName)
 
 %mkdir....
