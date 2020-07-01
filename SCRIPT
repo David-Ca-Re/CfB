@@ -95,38 +95,53 @@
     
     %NameUnique=unique(SampleNames); %RE-DO THIS WITH INITIAL AND BIOLOGICAL REPLICATE AND CONDITIONS
     
-    if DoMean==1   
+%     if DoMean==1   
+%         for iii=1:size(expHeaders,1)
+%             BioName(iii,1)=extractBefore(string(expHeaders{iii,1}),4);
+%             Condition(iii,1)=extractAfter(string(expHeaders{iii,1}),3);
+%        %     SampleNames(iii,1)=strcat(BioName+"\w\w\w"+Condition);
+%         end
+%         BioNameUnique=unique(BioName);
+%         ConditionUnique=unique(Condition);
+% 
+%         y=1;
+%         Means=zeros(size(num,1),size(NewTable,2));
+%         for cond=1:length(ConditionUnique)
+%             D_1=zeros(size(BioNameUnique,1),size(NewTable,2));
+%             
+%             for expn=1:length(BioNameUnique)
+%                 FullName=strcat(BioNameUnique(expn),ConditionUnique(cond));
+%                 D_1(expn,:)=D(ismember(expHeaders,FullName),:);
+%                 if expn==1
+%                   rowpos=find(ismember(expHeaders,FullName));
+%                 elseif expn>1
+%                   rowDelete(y,1)=find(ismember(expHeaders,FullName));
+%                   y=y+1;
+%                 end
+%             end
+%             Means(rowpos,:)=mean(D_1);
+%             
+%         end
+%         Means(rowDelete,:)=[];     
+%         %expHeaders=strcat('S01',position);
+%         expHeaders(rowDelete,:)=[];
+%         MeanTable=[expHeaders string(Means)];
+%     end
+    
+    expHeaders=vertcat(comm,H1,H2);
+    if DoMean==1
         for iii=1:size(expHeaders,1)
-            BioName(iii,1)=extractBefore(string(expHeaders{iii,1}),4);
             Condition(iii,1)=extractAfter(string(expHeaders{iii,1}),3);
-       %     SampleNames(iii,1)=strcat(BioName+"\w\w\w"+Condition);
         end
-        BioNameUnique=unique(BioName);
         ConditionUnique=unique(Condition);
-
-        y=1;
-        Means=zeros(size(num,1),size(NewTable,2));
-        for cond=1:length(ConditionUnique)
-            D_1=zeros(size(BioNameUnique,1),size(NewTable,2));
-            
-            for expn=1:length(BioNameUnique)
-                FullName=strcat(BioNameUnique(expn),ConditionUnique(cond));
-                D_1(expn,:)=D(ismember(expHeaders,FullName),:);
-                if expn==1
-                  rowpos=find(ismember(expHeaders,FullName));
-                elseif expn>1
-                  rowDelete(y,1)=find(ismember(expHeaders,FullName));
-                  y=y+1;
-                end
-            end
-            Means(rowpos,:)=mean(D_1);
-            
+        for i=1:length(ConditionUnique)
+            ithCond=ConditionUnique(i);
+            DMean(i,:)=mean(D(find(not(cellfun(@isempty,regexp(expHeaders,ithCond)))),:));
+            expHeaderMean(i,:)= strcat(string('SMN'),ConditionUnique(i)); % sample number is replace by SMN for the mean of the samples
         end
-        Means(rowDelete,:)=[];     
-        %expHeaders=strcat('S01',position);
-        expHeaders(rowDelete,:)=[];
-        MeanTable=[expHeaders string(Means)];
+        MeanTable=[expHeaderMean string(DMean)];
     end
+    
         
         
     %     for cond=1:length(ConditionUnique)
@@ -220,8 +235,8 @@
             A=NewTable(:,not(cellfun(@isempty, regexp(NamesUni,molecule_A))));
             newExpTitles=expHeaders;
         elseif DoMean==1
-            A=Means(:,not(cellfun(@isempty, regexp(NamesUni,molecule_A)))); %check that the values are correct!
-            newExpTitles=expHeaders;
+            A=DMean(:,not(cellfun(@isempty, regexp(NamesUni,molecule_A)))); %check that the values are correct!
+            newExpTitles=expHeaderMean;
         end
         %newExpTitles{end,end}=table2cell(table(strcat("final",newExpTitles{end,end})));
         %not needed anymore
@@ -335,7 +350,7 @@
 %!Rscript your_script.r
 %!C:\Program Files\R\R-2.14.1\bin\Rscript R-MIDcore.R
 %path to R
-!/Users/s182286/opt/anaconda3/Applications/RStudio.app R-MIDcore.R
+%!/Users/s182286/opt/anaconda3/Applications/RStudio.app R-MIDcore.R
 %or just >> RunRcode(RscriptFileName)
 
 %mkdir....
