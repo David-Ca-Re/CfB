@@ -1,7 +1,7 @@
 %function ExcelToMIDcore('ExcelFile','DoMean','Protocol', 'DataFile','IonArg012')
     %ExcelFile='ExcelToMIDcore.xlsx';
-    ExcelFile='20190613_Results_flux_Ivan-COPY_1.xlsx';
-    Protocol='LC-MS1'; 
+    ExcelFile='GC-MS_toMIDcore_format.xlsx';
+    %Protocol='LC-MS1'; 
     %ExcelFile='20190613_Results_flux_Ivan-COPY_1.xlsx';
     %Protocol='LC-MS1'; 
     DoMean=1;
@@ -135,9 +135,19 @@
         end
         ConditionUnique=unique(Condition);
         for i=1:length(ConditionUnique)
+            
             ithCond=ConditionUnique(i);
-            DMean(i,:)=mean(D(find(not(cellfun(@isempty,regexp(expHeaders,ithCond)))),:));
-            expHeaderMean(i,:)= strcat(string('SMN'),ConditionUnique(i)); % sample number is replace by SMN for the mean of the samples
+            noReplicates=size(D(find(not(cellfun(@isempty,regexp(expHeaders,ithCond)))),:),1);
+            if noReplicates>1
+                DMean(i,:)=mean(D(find(not(cellfun(@isempty,regexp(expHeaders,ithCond)))),:));
+            elseif noReplicates==1
+                DMean(i,:)=D(find(not(cellfun(@isempty,regexp(expHeaders,ithCond)))),:);
+            end
+            if ithCond==string('d')
+                expHeaderMean(i,:)= strcat(string('Col'),ConditionUnique(i)); 
+            else
+                expHeaderMean(i,:)= strcat(string('SMN'),ConditionUnique(i)); % sample number is replace by SMN for the mean of the samples
+            end
         end
         MeanTable=[expHeaderMean string(DMean)];
     end
@@ -214,16 +224,16 @@
         Carbons=table(string('carbons'),string(carbonsNumber));
         Fragment=table(string('fragment'),string(fragment));
         Silicum=table(string('silicum'),string(siliciumNumber));
-        Sulfur=table(string('sulfur'),string(sulfurNumber));
-        Head=vertcat(Carbons,Fragment,Silicum,Sulfur);
+        Sulphur=table(string('sulphur'),string(sulfurNumber));
+        Head=vertcat(Carbons,Fragment,Silicum,Sulphur);
 
         
         
-        mz=zeros(1,carbonsNumber+1);
+        mz=zeros(1,fragment+1);
         mz(1,1)=molecules_info{row,2};
         MZ=table(zeros(1,1));
         MZ{1,1}=mz(1,1);
-        for value=2:carbonsNumber+1
+        for value=2:fragment+1
              mz(1,value)=mz(1,value-1)+1;
              MZ{1,value}=string(mz(1,value));
         end
@@ -238,6 +248,7 @@
             A=DMean(:,not(cellfun(@isempty, regexp(NamesUni,molecule_A)))); %check that the values are correct!
             newExpTitles=expHeaderMean;
         end
+        
         %newExpTitles{end,end}=table2cell(table(strcat("final",newExpTitles{end,end})));
         %not needed anymore
         A_final=[newExpTitles string(A)];
@@ -245,7 +256,7 @@
         
        
         
-        
+        NEED_COMMER=0;
        %Check if there is no row with commer data or the row are zeros in
        %order to generate the commer asuming a Binomial Distribution
         if isempty(commercial)==1 || commercial(1,1)==0
@@ -262,7 +273,8 @@
             for ii=1:length(commer)
                 commer_vector{1,ii}=commer(ii);
             end
-            commer_line=table(string('commer'),string(commer_vector{:,:}));
+            commer_line=table(string('Cold'),string(commer_vector{:,:}));
+            NEED_COMMER=1;
         end
   
         
@@ -289,6 +301,9 @@
             mz=mz-1;
             MZ=string(mz);
             BodyHeader=table(string('m/z'),string(MZ));
+            A(:,1)=A(:,1)+A(:,end);
+            A(:,end)=[];
+            A_final=[newExpTitles string(A)];
         elseif IonArg==2
             %Negative --> Do nothing for now
             
@@ -298,7 +313,7 @@
         
         %TO PRINT IN AN OUTFILE       
     
-        molName=strcat(molecule,string('.txt');
+        molName=strcat(molecule,string('.txt'));
         fileID = fopen(molName,string('w'));
         [rown, ~]=size(Head);
         for row = 1:rown
@@ -314,13 +329,15 @@
         end
         fclose(string('all'));
         
-        fileID = fopen(molName,string('a'));
-        [rown, ~]=size(commer_line);
-        for row = 1:rown
-            fprintf(fileID,string('%s \t'),string(commer_line{row,:}));
+        if NEED_COMMER ==1
+            fileID = fopen(molName,string('a'));
+            [rown, ~]=size(commer_line);
+            for row = 1:rown
+                fprintf(fileID,string('%s \t'),string(commer_line{row,:}));
+            end
+            fprintf(fileID,string('\n'));
+            fclose(string('all'));
         end
-        fprintf(fileID,string('\n'));
-        fclose(string('all'));
         
         fileID = fopen(molName,string('a'));
         [rown, coln]=size(A_final);
@@ -350,7 +367,7 @@
 %!Rscript your_script.r
 %!C:\Program Files\R\R-2.14.1\bin\Rscript R-MIDcore.R
 %path to R
-!/Users/s182286/opt/anaconda3/Applications/RStudio.app R-MIDcore.R
+%!/Users/s182286/opt/anaconda3/Applications/RStudio.app R-MIDcore.R
 %or just >> RunRcode(RscriptFileName)
 
 %mkdir....
