@@ -72,7 +72,7 @@
     newTable2 = cellfun(@isempty,regexp(experiments(3:end),'T01'));
     newTable2 = D(find(logical(newTable2 - commercial)),:);
     
-    commercial=D(find(commercial));   
+    commercial=D(find(commercial),:);   
     NewTable = [commercial; newTable1; newTable2];
     Exp=experiments(3:end);
     H1=Exp(find(not(cellfun(@isempty,regexp(experiments(3:end),'T01')))),:);
